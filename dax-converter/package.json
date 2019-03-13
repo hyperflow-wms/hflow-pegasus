@@ -1,0 +1,9 @@
+{
+	"name": "",
+	"description": "",
+	"version": "0.2",
+	"dependencies": {
+		"shell-quote": "1.6.x",
+		"xml2js": "^0.4.19"
+	}
+}
