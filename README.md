@@ -11,7 +11,7 @@ docker build -t <container_name> .
 
 ## Usage
 ```
-docker run -v <local_dir>:/wfdir <container_name> [-c command_name] dax_args...
+docker run -v <local_dir>:/wfdir hyperflowwms/hflow-pegasus [-c command_name] dax_args...
 ```
 where
 - `local_dir` is a local directory that should contain Pegasus' `dax-generator` and all other files required to generate the DAX
