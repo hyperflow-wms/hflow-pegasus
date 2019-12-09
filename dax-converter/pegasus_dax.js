@@ -70,9 +70,9 @@ function parseDax(filename, cb) {
 
 function createWorkflow(dax, functionName, cb) {
     var wfOut = {
-        functions: [ {"name": functionName, "module": "functions"} ],
-        tasks: [],
-        data: [],
+        //functions: [ {"name": functionName, "module": "functions"} ],
+        processes: [],
+        signals: [],
         ins: [],
         outs: []
     };
@@ -95,7 +95,7 @@ function createWorkflow(dax, functionName, cb) {
         var args = job.argument ? parse(job.argument[0]): [],
             jname = job['$'].name;
 
-        wfOut.tasks.push({
+        wfOut.processes.push({
             "name": jname,
             "function": functionName,
             "type": "dataflow",
@@ -112,11 +112,11 @@ function createWorkflow(dax, functionName, cb) {
         });
 
         if (job.stdout) { // stdout should be redirected to a file
-            wfOut.tasks[nextTaskId].config.executor.stdout = job.stdout[0]['$'].name;
+            wfOut.processes[nextTaskId].config.executor.stdout = job.stdout[0]['$'].name;
         }
 
         if (job['$'].runtime) { // synthetic workflow dax
-            wfOut.tasks[nextTaskId].runtime = job['$'].runtime;
+            wfOut.processes[nextTaskId].runtime = job['$'].runtime;
         }
 
         var dataId, dataName;
@@ -128,7 +128,7 @@ function createWorkflow(dax, functionName, cb) {
             }
             if (!dataNames[dataName]) {
                 ++nextDataId;
-                wfOut.data.push({
+                wfOut.signals.push({
                     "name": dataName,
                     "sources": [],
                     "sinks": []
@@ -139,41 +139,36 @@ function createWorkflow(dax, functionName, cb) {
                 dataId = dataNames[dataName];
             }
             if (job_data['$'].size) { // synthetic workflow dax
-                wfOut.data[dataId].size = job_data['$'].size;
+                wfOut.signals[dataId].size = job_data['$'].size;
             }
             if (job_data['$'].link == 'input') {
-                wfOut.tasks[nextTaskId].ins.push(dataId);
-                wfOut.data[dataId].sinks.push(nextTaskId);
+                wfOut.processes[nextTaskId].ins.push(dataId);
+                wfOut.signals[dataId].sinks.push(nextTaskId);
             } else {
-                wfOut.tasks[nextTaskId].outs.push(dataId);
-                wfOut.data[dataId].sources.push(nextTaskId);
+                wfOut.processes[nextTaskId].outs.push(dataId);
+                wfOut.signals[dataId].sources.push(nextTaskId);
             }
         });
     });
 
-    for (var i=0; i<wfOut.data.length; ++i) {
-        if (wfOut.data[i].sources.length == 0) {
+    for (var i=0; i<wfOut.signals.length; ++i) {
+        if (wfOut.signals[i].sources.length == 0) {
             wfOut.ins.push(i);
             // the line below sends initial signals to the workflow. FIXME: add a cmd line option 
-            wfOut.data[i].data = [{ }]; 
+            wfOut.signals[i].data = [{ }]; 
         }
-        if (wfOut.data[i].sinks.length == 0) {
+        if (wfOut.signals[i].sinks.length == 0) {
             wfOut.outs.push(i);
         }
     }
 
-    for (var i=0; i<wfOut.data.length; ++i) {
-        if (wfOut.data[i].sources.length > 1) {
-            console.error("WARNING multiple sources for:" + wfOut.data[i].name, "sinks:", wfOut.data[i].sinks);
+    for (var i=0; i<wfOut.signals.length; ++i) {
+        if (wfOut.signals[i].sources.length > 1) {
+            console.error("WARNING multiple sources for:" + wfOut.signals[i].name, "sinks:", wfOut.signals[i].sinks);
         }
-        delete wfOut.data[i].sources;
-        delete wfOut.data[i].sinks;
+        delete wfOut.signals[i].sources;
+        delete wfOut.signals[i].sinks;
     }
-
-    wfOut.processes = wfOut.tasks;
-    wfOut.signals = wfOut.data;
-    delete wfOut.tasks;
-    delete wfOut.data;
 
     cb(null, wfOut);
 }
